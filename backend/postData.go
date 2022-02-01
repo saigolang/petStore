@@ -3,14 +3,15 @@ package backend
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
+	"errors"
 	"log"
 	"net/http"
+	"petStore/constants"
 	"petStore/structs"
 )
 
 func CreatePetResource(rw http.ResponseWriter, req *http.Request) {
-
+	// validate input request
 	decoder := json.NewDecoder(req.Body)
 	var request structs.Pet
 	err := decoder.Decode(&request)
@@ -21,26 +22,33 @@ func CreatePetResource(rw http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	resp, err := http.Post("http://petstore-demo-endpoint.execute-api.com/petstore/pets", "application/json",
-		bytes.NewBuffer(marshalledData))
-
-	if err != nil {
-		log.Fatal(err)
+	pet, postErr := postData(marshalledData)
+	// todo handle error
+	if postErr != nil {
+		return
 	}
-
-	fmt.Println("http response is ", resp.Body)
-
-	var pet structs.CreatePet
-	json.NewDecoder(resp.Body).Decode(&pet)
-	fmt.Println("pets we got is ", pet)
-
 	rw.Header().Set("Content-Type", "application/json")
 	rw.WriteHeader(http.StatusOK)
 	jsonResponse, err := json.Marshal(pet)
 	if err != nil {
-		fmt.Println("error is ", err)
 		return
 	}
 	rw.Write(jsonResponse)
+}
+
+func postData(marshalledData []byte) (structs.CreatePet, error) {
+	resp, err := http.Post(constants.URL, "application/json",
+		bytes.NewBuffer(marshalledData))
+
+	if err != nil {
+		return structs.CreatePet{}, errors.New("error in posting the request: " + err.Error())
+	}
+	var pet structs.CreatePet
+	json.NewDecoder(resp.Body).Decode(&pet)
+	return pet, nil
+}
+
+// todo
+func validatePostRequest() {
+
 }

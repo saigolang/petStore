@@ -10,3 +10,7 @@ type CreatePet struct {
 	Pets    Pet    `json:"pet"`
 	Message string `json:"message"`
 }
+
+type ErrorMessage struct {
+	Message string
+}
