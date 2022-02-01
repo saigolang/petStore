@@ -6,9 +6,13 @@ import (
 	"log"
 	"net/http"
 	"petStore/backend"
+	"petStore/logger"
 )
 
 func main() {
+
+	// Initializing logging
+	logger.NewLogger()
 	router := mux.NewRouter()
 
 	router.HandleFunc("/pets", backend.GetPets).Methods("GET")
@@ -18,5 +22,5 @@ func main() {
 	fmt.Println("Server started")
 
 	//start and listen to requests
-	log.Fatal(http.ListenAndServe(":8081", router))
+	log.Fatal(http.ListenAndServe(":8082", router))
 }

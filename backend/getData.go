@@ -2,30 +2,31 @@ package backend
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/gorilla/mux"
-	"log"
 	"net/http"
 	"net/url"
 	"path"
 	"petStore/constants"
+	"petStore/logger"
 	"petStore/structs"
 )
 
 func GetPets(rw http.ResponseWriter, req *http.Request) {
-	response, err := httpGet(constants.URL)
-	if err != nil {
-		log.Fatalln(err)
-	}
 	var pets []structs.Pet
-	json.NewDecoder(response.Body).Decode(&pets)
+	response, err := getHTTPData(constants.URL, pets)
 	rw.Header().Set("Content-Type", "application/json")
-	rw.WriteHeader(http.StatusOK)
-	jsonResponse, err := json.Marshal(pets)
 	if err != nil {
-		fmt.Println("error is ", err)
+		handleError(rw, err)
 		return
 	}
+	rw.WriteHeader(http.StatusOK)
+	jsonResponse, err := json.Marshal(response)
+	if err != nil {
+		logger.Log.WithField("marshalling error", err.Error())
+		handleError(rw, err)
+		return
+	}
+
 	rw.Write(jsonResponse)
 	return
 }
@@ -37,29 +38,36 @@ func GetPetById(rw http.ResponseWriter, req *http.Request) {
 	baseURL, _ := url.Parse(constants.URL)
 	baseURL.Path = path.Join(baseURL.Path, "/"+petId)
 
-	response, err := httpGet(baseURL.String())
+	response, err := getHTTPData(baseURL.String(), structs.Pet{})
 	if err != nil {
-		log.Fatalln(err)
+		handleError(rw, err)
+		logger.Log.WithField("connection error", err.Error())
+		return
 	}
-	var pets structs.Pet
-	json.NewDecoder(response.Body).Decode(&pets)
 	rw.Header().Set("Content-Type", "application/json")
 	rw.WriteHeader(http.StatusOK)
-
-	jsonResponse, err := json.Marshal(pets)
+	jsonResponse, err := json.Marshal(response)
 	if err != nil {
-		fmt.Println("error is ", err)
+		logger.Log.WithField("marshalling error", err.Error())
+		handleError(rw, err)
 		return
 	}
 	rw.Write(jsonResponse)
 	return
-
 }
 
-func httpGet(url string) (*http.Response, error) {
-	response, err := http.Get(url)
+func getHTTPData(url string, input interface{}) (interface{}, error) {
+	request, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
+		logger.Log.WithField("connection error", err.Error())
 		return nil, err
 	}
-	return response, nil
+	request.Header.Add("Accept", "application/json")
+	response, err := Client.Do(request)
+	if err != nil {
+		logger.Log.WithField("connection error", err.Error())
+		return nil, err
+	}
+	json.NewDecoder(response.Body).Decode(&input)
+	return input, nil
 }
