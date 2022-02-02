@@ -12,5 +12,4 @@ func NewLogger() {
 	Log = logrus.New()
 	Log.SetLevel(logrus.ErrorLevel)
 	Log.SetFormatter(&logrus.JSONFormatter{})
-	return
 }

@@ -2,6 +2,7 @@ package backend
 
 import (
 	"encoding/json"
+	"errors"
 	"github.com/gorilla/mux"
 	"net/http"
 	"net/url"
@@ -67,6 +68,10 @@ func getHTTPData(url string, input interface{}) (interface{}, error) {
 	if err != nil {
 		logger.Log.WithField("connection error", err.Error())
 		return nil, err
+	}
+	if response.StatusCode != http.StatusOK {
+		logger.Log.Error("connection Failed")
+		return nil, errors.New("connection Failed")
 	}
 	json.NewDecoder(response.Body).Decode(&input)
 	return input, nil

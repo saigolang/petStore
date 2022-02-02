@@ -3,6 +3,7 @@ package backend
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"petStore/constants"
 	"petStore/logger"
@@ -27,7 +28,7 @@ func CreatePetResource(rw http.ResponseWriter, req *http.Request) {
 	}
 	pet, postErr := postData(marshalledData, constants.URL, structs.CreatePet{})
 	if postErr != nil {
-		logger.Log.WithField("connection error", err.Error())
+		logger.Log.WithField("connection error", postErr)
 		handleError(rw, postErr)
 		return
 	}
@@ -57,6 +58,10 @@ func postData(marshalledData []byte, url string, input interface{}) (interface{}
 	if err != nil {
 		logger.Log.WithField("connection error", err.Error())
 		return structs.CreatePet{}, err
+	}
+	if response.StatusCode != http.StatusOK {
+		logger.Log.Error("connection Failed")
+		return nil, errors.New("connection Failed")
 	}
 	json.NewDecoder(response.Body).Decode(&input)
 	return input, nil
